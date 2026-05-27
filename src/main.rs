@@ -12,16 +12,12 @@ mod assets;
 mod handlers;
 
 use clap::{Parser, Subcommand};
-use tokimo_bus_client::{BusClient, ClientConfig};
 use tokimo_bus_cli::TokimoAuthArgs;
+use tokimo_bus_client::{BusClient, ClientConfig};
 use tracing::{error, info};
 
 #[derive(Parser, Debug)]
-#[command(
-    name = "tokimo-app-weather",
-    about = "Weather — Tokimo 子 app CLI",
-    term_width = 100
-)]
+#[command(name = "tokimo-app-weather", about = "Weather — Tokimo 子 app CLI", term_width = 100)]
 struct Cli {
     #[command(flatten)]
     auth: TokimoAuthArgs,

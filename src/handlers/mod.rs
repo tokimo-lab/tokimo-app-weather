@@ -23,8 +23,7 @@ struct CacheEntry {
     created_at: Instant,
 }
 
-static WEATHER_CACHE: LazyLock<RwLock<HashMap<String, CacheEntry>>> =
-    LazyLock::new(|| RwLock::new(HashMap::new()));
+static WEATHER_CACHE: LazyLock<RwLock<HashMap<String, CacheEntry>>> = LazyLock::new(|| RwLock::new(HashMap::new()));
 
 fn cache_key(lat: f64, lon: f64) -> String {
     format!("{lat:.2},{lon:.2}")
@@ -262,10 +261,7 @@ struct NominatimAddress {
     country_code: Option<String>,
 }
 
-pub async fn get_weather(
-    State(state): State<Arc<AppState>>,
-    Query(params): Query<WeatherQuery>,
-) -> impl IntoResponse {
+pub async fn get_weather(State(state): State<Arc<AppState>>, Query(params): Query<WeatherQuery>) -> impl IntoResponse {
     let key = cache_key(params.lat, params.lon);
     {
         let cache = WEATHER_CACHE.read().await;
@@ -401,10 +397,13 @@ pub async fn get_weather(
 
     {
         let mut cache = WEATHER_CACHE.write().await;
-        cache.insert(key, CacheEntry {
-            data: response.clone(),
-            created_at: Instant::now(),
-        });
+        cache.insert(
+            key,
+            CacheEntry {
+                data: response.clone(),
+                created_at: Instant::now(),
+            },
+        );
         if cache.len() > 100 {
             cache.retain(|_, v| v.created_at.elapsed() < Duration::from_secs(CACHE_TTL_SECS));
         }
@@ -413,10 +412,7 @@ pub async fn get_weather(
     ok(response).into_response()
 }
 
-pub async fn geocode(
-    State(state): State<Arc<AppState>>,
-    Query(params): Query<GeocodingQuery>,
-) -> impl IntoResponse {
+pub async fn geocode(State(state): State<Arc<AppState>>, Query(params): Query<GeocodingQuery>) -> impl IntoResponse {
     match nominatim_search(&state.http_client, &params.q, params.limit, &params.lang).await {
         Ok(entries) => {
             let results: Vec<GeocodingResult> = entries
@@ -424,14 +420,14 @@ pub async fn geocode(
                 .filter_map(|e| {
                     let lat = e.lat.parse::<f64>().ok()?;
                     let lon = e.lon.parse::<f64>().ok()?;
-                    let name = e.address.city
+                    let name = e
+                        .address
+                        .city
                         .or(e.address.town)
                         .or(e.address.village)
                         .or(e.address.municipality)
                         .unwrap_or(e.name);
-                    let country = e.address.country
-                        .or(e.address.country_code)
-                        .unwrap_or_default();
+                    let country = e.address.country.or(e.address.country_code).unwrap_or_default();
                     Some(GeocodingResult {
                         name,
                         lat,
@@ -447,38 +443,42 @@ pub async fn geocode(
     }
 }
 
-async fn fetch_forecast(
-    client: &reqwest::Client,
-    lat: f64,
-    lon: f64,
-) -> Result<OmForecastResponse, String> {
+async fn fetch_forecast(client: &reqwest::Client, lat: f64, lon: f64) -> Result<OmForecastResponse, String> {
     let url = format!(
         "https://api.open-meteo.com/v1/forecast         ?latitude={lat}&longitude={lon}         &current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,         precipitation,rain,snowfall,weather_code,cloud_cover,pressure_msl,         surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m         &hourly=temperature_2m,relative_humidity_2m,apparent_temperature,         precipitation_probability,precipitation,rain,snowfall,weather_code,         cloud_cover,visibility,wind_speed_10m,wind_direction_10m,pressure_msl,is_day         &daily=weather_code,temperature_2m_max,temperature_2m_min,         sunrise,sunset,precipitation_sum,rain_sum,snowfall_sum,         precipitation_probability_max,wind_speed_10m_max,uv_index_max         &wind_speed_unit=ms&timezone=auto&forecast_hours=48"
     );
-    let resp = client.get(&url).send().await.map_err(|e| format!("Open-Meteo request failed: {e}"))?;
+    let resp = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("Open-Meteo request failed: {e}"))?;
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
         return Err(format!("Open-Meteo API error {status}: {body}"));
     }
-    resp.json::<OmForecastResponse>().await.map_err(|e| format!("Open-Meteo JSON parse error: {e}"))
+    resp.json::<OmForecastResponse>()
+        .await
+        .map_err(|e| format!("Open-Meteo JSON parse error: {e}"))
 }
 
-async fn fetch_air_quality(
-    client: &reqwest::Client,
-    lat: f64,
-    lon: f64,
-) -> Result<OmAirQualityResponse, String> {
+async fn fetch_air_quality(client: &reqwest::Client, lat: f64, lon: f64) -> Result<OmAirQualityResponse, String> {
     let url = format!(
         "https://air-quality-api.open-meteo.com/v1/air-quality         ?latitude={lat}&longitude={lon}         &current=european_aqi,us_aqi,pm10,pm2_5,carbon_monoxide,         nitrogen_dioxide,sulphur_dioxide,ozone,dust,uv_index         &timezone=auto"
     );
-    let resp = client.get(&url).send().await.map_err(|e| format!("Air Quality request failed: {e}"))?;
+    let resp = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("Air Quality request failed: {e}"))?;
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
         return Err(format!("Air Quality API error {status}: {body}"));
     }
-    resp.json::<OmAirQualityResponse>().await.map_err(|e| format!("Air Quality JSON parse error: {e}"))
+    resp.json::<OmAirQualityResponse>()
+        .await
+        .map_err(|e| format!("Air Quality JSON parse error: {e}"))
 }
 
 async fn nominatim_search(
@@ -492,13 +492,20 @@ async fn nominatim_search(
     let url = format!(
         "https://nominatim.openstreetmap.org/search?q={encoded_q}&format=json&limit={limit}&accept-language={encoded_lang}&addressdetails=1"
     );
-    let resp = client.get(&url).header("User-Agent", "tokimo-weather/1.0").send().await.map_err(|e| format!("Nominatim request failed: {e}"))?;
+    let resp = client
+        .get(&url)
+        .header("User-Agent", "tokimo-weather/1.0")
+        .send()
+        .await
+        .map_err(|e| format!("Nominatim request failed: {e}"))?;
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
         return Err(format!("Nominatim API error {status}: {body}"));
     }
-    resp.json::<Vec<NominatimEntry>>().await.map_err(|e| format!("Nominatim JSON parse error: {e}"))
+    resp.json::<Vec<NominatimEntry>>()
+        .await
+        .map_err(|e| format!("Nominatim JSON parse error: {e}"))
 }
 
 fn ok<T: Serialize>(v: T) -> Json<T> {
@@ -539,21 +546,41 @@ fn wmo_main(code: u32) -> String {
         85 | 86 => "Snow Showers",
         95 | 96 | 99 => "Thunderstorm",
         _ => "Unknown",
-    }.to_string()
+    }
+    .to_string()
 }
 
 fn wmo_description(code: u32) -> String {
     match code {
-        0 => "晴", 1 => "大部晴朗", 2 => "多云", 3 => "阴",
-        45 => "雾", 48 => "雾凇",
-        51 => "小毛毛雨", 53 => "毛毛雨", 55 => "大毛毛雨",
-        56 => "冻毛毛雨", 57 => "强冻毛毛雨",
-        61 => "小雨", 63 => "中雨", 65 => "大雨",
-        66 => "冻雨", 67 => "强冻雨",
-        71 => "小雪", 73 => "中雪", 75 => "大雪", 77 => "雪粒",
-        80 => "小阵雨", 81 => "阵雨", 82 => "强阵雨",
-        85 => "小阵雪", 86 => "大阵雪",
-        95 => "雷暴", 96 => "雷暴伴冰雹", 99 => "强雷暴伴冰雹",
+        0 => "晴",
+        1 => "大部晴朗",
+        2 => "多云",
+        3 => "阴",
+        45 => "雾",
+        48 => "雾凇",
+        51 => "小毛毛雨",
+        53 => "毛毛雨",
+        55 => "大毛毛雨",
+        56 => "冻毛毛雨",
+        57 => "强冻毛毛雨",
+        61 => "小雨",
+        63 => "中雨",
+        65 => "大雨",
+        66 => "冻雨",
+        67 => "强冻雨",
+        71 => "小雪",
+        73 => "中雪",
+        75 => "大雪",
+        77 => "雪粒",
+        80 => "小阵雨",
+        81 => "阵雨",
+        82 => "强阵雨",
+        85 => "小阵雪",
+        86 => "大阵雪",
+        95 => "雷暴",
+        96 => "雷暴伴冰雹",
+        99 => "强雷暴伴冰雹",
         _ => "未知",
-    }.to_string()
+    }
+    .to_string()
 }
