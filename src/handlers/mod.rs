@@ -445,7 +445,7 @@ pub async fn geocode(State(state): State<Arc<AppState>>, Query(params): Query<Ge
 
 async fn fetch_forecast(client: &reqwest::Client, lat: f64, lon: f64) -> Result<OmForecastResponse, String> {
     let url = format!(
-        "https://api.open-meteo.com/v1/forecast         ?latitude={lat}&longitude={lon}         &current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,         precipitation,rain,snowfall,weather_code,cloud_cover,pressure_msl,         surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m         &hourly=temperature_2m,relative_humidity_2m,apparent_temperature,         precipitation_probability,precipitation,rain,snowfall,weather_code,         cloud_cover,visibility,wind_speed_10m,wind_direction_10m,pressure_msl,is_day         &daily=weather_code,temperature_2m_max,temperature_2m_min,         sunrise,sunset,precipitation_sum,rain_sum,snowfall_sum,         precipitation_probability_max,wind_speed_10m_max,uv_index_max         &wind_speed_unit=ms&timezone=auto&forecast_hours=48"
+        "https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,precipitation,rain,snowfall,weather_code,cloud_cover,visibility,wind_speed_10m,wind_direction_10m,pressure_msl,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max&wind_speed_unit=ms&timezone=auto&forecast_hours=48"
     );
     let resp = client
         .get(&url)
@@ -464,7 +464,7 @@ async fn fetch_forecast(client: &reqwest::Client, lat: f64, lon: f64) -> Result<
 
 async fn fetch_air_quality(client: &reqwest::Client, lat: f64, lon: f64) -> Result<OmAirQualityResponse, String> {
     let url = format!(
-        "https://air-quality-api.open-meteo.com/v1/air-quality         ?latitude={lat}&longitude={lon}         &current=european_aqi,us_aqi,pm10,pm2_5,carbon_monoxide,         nitrogen_dioxide,sulphur_dioxide,ozone,dust,uv_index         &timezone=auto"
+        "https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=european_aqi,us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone,dust,uv_index&timezone=auto"
     );
     let resp = client
         .get(&url)
