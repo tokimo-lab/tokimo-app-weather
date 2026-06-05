@@ -265,11 +265,10 @@ pub async fn get_weather(State(state): State<Arc<AppState>>, Query(params): Quer
     let key = cache_key(params.lat, params.lon);
     {
         let cache = WEATHER_CACHE.read().await;
-        if let Some(entry) = cache.get(&key) {
-            if entry.created_at.elapsed() < Duration::from_secs(CACHE_TTL_SECS) {
+        if let Some(entry) = cache.get(&key)
+            && entry.created_at.elapsed() < Duration::from_secs(CACHE_TTL_SECS) {
                 return ok(entry.data.clone()).into_response();
             }
-        }
     }
 
     let om = match fetch_forecast(&state.http_client, params.lat, params.lon).await {
