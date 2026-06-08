@@ -20,6 +20,7 @@ use tracing::{error, info};
 #[command(
     name = "tokimo-app-weather",
     about = "Weather — Tokimo 子 app CLI",
+    long_about = "Weather CLI — 查询天气预报与实况。",
     term_width = 100
 )]
 struct Cli {
