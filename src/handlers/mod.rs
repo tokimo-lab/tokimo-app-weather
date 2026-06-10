@@ -23,8 +23,7 @@ struct CacheEntry {
     created_at: Instant,
 }
 
-static WEATHER_CACHE: LazyLock<RwLock<HashMap<String, CacheEntry>>> =
-    LazyLock::new(|| RwLock::new(HashMap::new()));
+static WEATHER_CACHE: LazyLock<RwLock<HashMap<String, CacheEntry>>> = LazyLock::new(|| RwLock::new(HashMap::new()));
 
 fn cache_key(lat: f64, lon: f64) -> String {
     format!("{lat:.2},{lon:.2}")
@@ -262,10 +261,7 @@ struct NominatimAddress {
     country_code: Option<String>,
 }
 
-pub async fn get_weather(
-    State(state): State<Arc<AppState>>,
-    Query(params): Query<WeatherQuery>,
-) -> impl IntoResponse {
+pub async fn get_weather(State(state): State<Arc<AppState>>, Query(params): Query<WeatherQuery>) -> impl IntoResponse {
     let key = cache_key(params.lat, params.lon);
     {
         let cache = WEATHER_CACHE.read().await;
@@ -297,18 +293,8 @@ pub async fn get_weather(
             uv_index: a.current.uv_index,
         });
 
-    let today_sunrise = om
-        .daily
-        .sunrise
-        .first()
-        .and_then(|s| parse_local_dt(s))
-        .unwrap_or(0);
-    let today_sunset = om
-        .daily
-        .sunset
-        .first()
-        .and_then(|s| parse_local_dt(s))
-        .unwrap_or(0);
+    let today_sunrise = om.daily.sunrise.first().and_then(|s| parse_local_dt(s)).unwrap_or(0);
+    let today_sunset = om.daily.sunset.first().and_then(|s| parse_local_dt(s)).unwrap_or(0);
     let today_min = om.daily.temperature_2m_min.first().copied().unwrap_or(0.0);
     let today_max = om.daily.temperature_2m_max.first().copied().unwrap_or(0.0);
     let current_dt = parse_local_dt(&om.current.time).unwrap_or(0);
@@ -426,10 +412,7 @@ pub async fn get_weather(
     ok(response).into_response()
 }
 
-pub async fn geocode(
-    State(state): State<Arc<AppState>>,
-    Query(params): Query<GeocodingQuery>,
-) -> impl IntoResponse {
+pub async fn geocode(State(state): State<Arc<AppState>>, Query(params): Query<GeocodingQuery>) -> impl IntoResponse {
     match nominatim_search(&state.http_client, &params.q, params.limit, &params.lang).await {
         Ok(entries) => {
             let results: Vec<GeocodingResult> = entries
@@ -444,11 +427,7 @@ pub async fn geocode(
                         .or(e.address.village)
                         .or(e.address.municipality)
                         .unwrap_or(e.name);
-                    let country = e
-                        .address
-                        .country
-                        .or(e.address.country_code)
-                        .unwrap_or_default();
+                    let country = e.address.country.or(e.address.country_code).unwrap_or_default();
                     Some(GeocodingResult {
                         name,
                         lat,
@@ -464,11 +443,7 @@ pub async fn geocode(
     }
 }
 
-async fn fetch_forecast(
-    client: &reqwest::Client,
-    lat: f64,
-    lon: f64,
-) -> Result<OmForecastResponse, String> {
+async fn fetch_forecast(client: &reqwest::Client, lat: f64, lon: f64) -> Result<OmForecastResponse, String> {
     let url = format!(
         "https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,precipitation,rain,snowfall,weather_code,cloud_cover,visibility,wind_speed_10m,wind_direction_10m,pressure_msl,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max&wind_speed_unit=ms&timezone=auto&forecast_hours=48"
     );
@@ -487,11 +462,7 @@ async fn fetch_forecast(
         .map_err(|e| format!("Open-Meteo JSON parse error: {e}"))
 }
 
-async fn fetch_air_quality(
-    client: &reqwest::Client,
-    lat: f64,
-    lon: f64,
-) -> Result<OmAirQualityResponse, String> {
+async fn fetch_air_quality(client: &reqwest::Client, lat: f64, lon: f64) -> Result<OmAirQualityResponse, String> {
     let url = format!(
         "https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=european_aqi,us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone,dust,uv_index&timezone=auto"
     );
@@ -516,11 +487,8 @@ async fn nominatim_search(
     limit: u8,
     lang: &str,
 ) -> Result<Vec<NominatimEntry>, String> {
-    let encoded_q =
-        percent_encoding::utf8_percent_encode(query, percent_encoding::NON_ALPHANUMERIC)
-            .to_string();
-    let encoded_lang =
-        percent_encoding::utf8_percent_encode(lang, percent_encoding::NON_ALPHANUMERIC).to_string();
+    let encoded_q = percent_encoding::utf8_percent_encode(query, percent_encoding::NON_ALPHANUMERIC).to_string();
+    let encoded_lang = percent_encoding::utf8_percent_encode(lang, percent_encoding::NON_ALPHANUMERIC).to_string();
     let url = format!(
         "https://nominatim.openstreetmap.org/search?q={encoded_q}&format=json&limit={limit}&accept-language={encoded_lang}&addressdetails=1"
     );
