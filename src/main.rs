@@ -19,8 +19,8 @@ use tracing::{error, info};
 #[derive(Parser, Debug)]
 #[command(
     name = "tokimo-app-weather",
-    about = "Weather — Tokimo 子 app CLI",
-    long_about = "Weather CLI — 查询天气预报与实况。",
+    about = "Weather — Tokimo app CLI",
+    long_about = "Weather CLI — query weather forecast and current conditions.",
     term_width = 100
 )]
 struct Cli {
@@ -32,7 +32,7 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Command {
-    /// 打印 app 版本信息
+    /// Print app version info
     Version,
 }
 
