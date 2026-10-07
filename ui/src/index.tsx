@@ -28,6 +28,11 @@ export default defineApp({
     titleBarStyle: "overlay",
     singleton: true,
   },
+  standalone: {
+    createWindow: (route) => ({ type: "weather", route }),
+    getRoute: (window) =>
+      window.type === "weather" ? (window.route ?? "/") : null,
+  },
   mount(container, ctx): Dispose {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
