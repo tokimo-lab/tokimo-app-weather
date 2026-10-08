@@ -53,7 +53,7 @@ export default function WeatherPage() {
 
   if (showSettings) {
     return (
-      <div className="relative flex h-full flex-col overflow-hidden bg-[#1c1c1e]">
+      <div className="app-safe-area relative flex h-full flex-col overflow-hidden bg-[#1c1c1e]">
         <div className="flex items-center gap-2 px-4 pt-12 pb-2">
           <button
             type="button"
@@ -72,7 +72,7 @@ export default function WeatherPage() {
   }
 
   return (
-    <div className="relative flex h-full select-none flex-col overflow-hidden">
+    <div className="app-safe-area-top app-safe-area-x relative flex h-full select-none flex-col overflow-hidden">
       <WeatherBackground weatherCode={weatherCode} isNight={isNight} />
 
       {/* Top bar — settings button top-left */}
@@ -91,7 +91,7 @@ export default function WeatherPage() {
       <ScrollArea
         direction="vertical"
         hideScrollbar
-        className="relative z-10 flex-1 px-4 pb-16"
+        className="app-safe-area-bottom relative z-10 flex-1 px-4 [--app-safe-area-padding-bottom:4rem]"
       >
         {isLoading ? (
           <div className="flex h-60 items-center justify-center">
@@ -152,7 +152,7 @@ export default function WeatherPage() {
 
       {/* iOS-style city dots — fixed at bottom */}
       {hasCities && (
-        <div className="absolute bottom-4 left-0 right-0 z-20 flex justify-center gap-1">
+        <div className="absolute bottom-[calc(1rem+var(--app-safe-area-bottom,0px))] left-0 right-0 z-20 flex justify-center gap-1">
           {settings.cities.map((city, i) => (
             <button
               key={`${city.lat}-${city.lon}`}
