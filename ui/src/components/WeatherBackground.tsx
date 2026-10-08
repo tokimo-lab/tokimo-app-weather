@@ -1,3 +1,4 @@
+import { useStandaloneDocumentScroll } from "@tokimo/sdk";
 import { useEffect, useRef } from "react";
 import {
   getMoonPhase,
@@ -21,6 +22,7 @@ export function WeatherBackground({
   weatherCode: number;
   isNight: boolean;
 }) {
+  const documentScroll = useStandaloneDocumentScroll();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WeatherGL | null>(null);
   const kind = getWeatherKind(weatherCode);
@@ -51,7 +53,7 @@ export function WeatherBackground({
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none absolute inset-0 size-full"
+      className={`pointer-events-none inset-0 size-full ${documentScroll ? "fixed" : "absolute"}`}
     />
   );
 }

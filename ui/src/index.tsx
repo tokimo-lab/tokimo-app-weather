@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Dispose } from "@tokimo/sdk";
-import { defineApp, makeTranslator } from "@tokimo/sdk";
+import { defineApp, makeTranslator, RuntimeProvider } from "@tokimo/sdk";
 import {
   ConfigProvider,
   ToastProvider,
@@ -29,6 +29,8 @@ export default defineApp({
     singleton: true,
   },
   standalone: {
+    layout: "document",
+    background: "#1c1c1e",
     createWindow: (route) => ({ type: "weather", route }),
     getRoute: (window) =>
       window.type === "weather" ? (window.route ?? "/") : null,
@@ -43,15 +45,17 @@ export default defineApp({
 
     root.render(
       <StrictMode>
-        <TranslatorProvider value={t}>
-          <QueryClientProvider client={queryClient}>
-            <ConfigProvider locale={locale}>
-              <ToastProvider>
-                <WeatherPage />
-              </ToastProvider>
-            </ConfigProvider>
-          </QueryClientProvider>
-        </TranslatorProvider>
+        <RuntimeProvider value={ctx}>
+          <TranslatorProvider value={t}>
+            <QueryClientProvider client={queryClient}>
+              <ConfigProvider locale={locale}>
+                <ToastProvider>
+                  <WeatherPage />
+                </ToastProvider>
+              </ConfigProvider>
+            </QueryClientProvider>
+          </TranslatorProvider>
+        </RuntimeProvider>
       </StrictMode>,
     );
 

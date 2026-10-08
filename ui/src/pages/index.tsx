@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { useStandaloneDocumentScroll } from "@tokimo/sdk";
 import { ScrollArea } from "@tokimo/ui";
 import { MapPin, Settings, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type ComponentProps, useEffect, useState } from "react";
 import { WeatherAirQuality } from "../components/WeatherAirQuality";
 import { WeatherBackground } from "../components/WeatherBackground";
 import { WeatherCurrent } from "../components/WeatherCurrent";
@@ -12,7 +13,17 @@ import { WeatherSettingsPage } from "../components/WeatherSettingsPage";
 import type { WeatherResponse } from "../types";
 import { useWeatherSettings } from "../use-weather-settings";
 
+function WeatherScrollArea(props: ComponentProps<typeof ScrollArea>) {
+  const documentScroll = useStandaloneDocumentScroll();
+  return documentScroll ? (
+    <div className={props.className}>{props.children}</div>
+  ) : (
+    <ScrollArea {...props} />
+  );
+}
+
 export default function WeatherPage() {
+  const documentScroll = useStandaloneDocumentScroll();
   const { settings } = useWeatherSettings();
   const [viewIndex, setViewIndex] = useState(settings.primaryIndex);
   const [showSettings, setShowSettings] = useState(false);
@@ -53,7 +64,9 @@ export default function WeatherPage() {
 
   if (showSettings) {
     return (
-      <div className="app-safe-area relative flex h-full flex-col overflow-hidden bg-[#1c1c1e]">
+      <div
+        className={`app-safe-area relative flex flex-col bg-[#1c1c1e] ${documentScroll ? "min-h-dvh overflow-visible" : "h-full overflow-hidden"}`}
+      >
         <div className="flex items-center gap-2 px-4 pt-12 pb-2">
           <button
             type="button"
@@ -64,15 +77,17 @@ export default function WeatherPage() {
           </button>
           <h2 className="text-sm font-semibold text-white">Weather Settings</h2>
         </div>
-        <ScrollArea direction="vertical" className="flex-1 px-4 pb-4">
+        <WeatherScrollArea direction="vertical" className="flex-1 px-4 pb-4">
           <WeatherSettingsPage />
-        </ScrollArea>
+        </WeatherScrollArea>
       </div>
     );
   }
 
   return (
-    <div className="app-safe-area-top app-safe-area-x relative flex h-full select-none flex-col overflow-hidden">
+    <div
+      className={`app-safe-area-top app-safe-area-x relative flex select-none flex-col ${documentScroll ? "min-h-dvh overflow-visible" : "h-full overflow-hidden"}`}
+    >
       <WeatherBackground weatherCode={weatherCode} isNight={isNight} />
 
       {/* Top bar — settings button top-left */}
@@ -88,7 +103,7 @@ export default function WeatherPage() {
       </div>
 
       {/* Content — extra bottom padding for dots */}
-      <ScrollArea
+      <WeatherScrollArea
         direction="vertical"
         hideScrollbar
         className="app-safe-area-bottom relative z-10 flex-1 px-4 [--app-safe-area-padding-bottom:4rem]"
@@ -148,11 +163,13 @@ export default function WeatherPage() {
             )}
           </div>
         )}
-      </ScrollArea>
+      </WeatherScrollArea>
 
       {/* iOS-style city dots — fixed at bottom */}
       {hasCities && (
-        <div className="absolute bottom-[calc(1rem+var(--app-safe-area-bottom,0px))] left-0 right-0 z-20 flex justify-center gap-1">
+        <div
+          className={`${documentScroll ? "fixed" : "absolute"} bottom-[calc(1rem+var(--app-safe-area-bottom,0px))] left-0 right-0 z-20 flex justify-center gap-1`}
+        >
           {settings.cities.map((city, i) => (
             <button
               key={`${city.lat}-${city.lon}`}
